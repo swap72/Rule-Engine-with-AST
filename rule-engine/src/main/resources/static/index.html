@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rule Engine</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: green;
+        }
+
+        .error {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Rule Engine</h2>
+
+    <!-- Form for Rule Creation -->
+    <div class="form-group">
+        <label for="rule">Create Rule:</label>
+        <input type="text" id="rule" placeholder="(age > 30 AND department = 'Sales') OR salary > 50000">
+        <button class="btn" onclick="createRule()">Create Rule</button>
+    </div>
+
+    <!-- Form for Input Data -->
+    <div class="form-group">
+        <label for="age">Age:</label>
+        <input type="number" id="age" placeholder="Enter age">
+
+        <label for="department">Department:</label>
+        <input type="text" id="department" placeholder="Enter department (e.g., Sales)">
+
+        <label for="salary">Salary:</label>
+        <input type="number" id="salary" placeholder="Enter salary">
+
+        <label for="experience">Experience (years):</label>
+        <input type="number" id="experience" placeholder="Enter experience">
+    </div>
+
+    <button class="btn" onclick="evaluateRule()">Evaluate Rule</button>
+
+    <!-- Result Display -->
+    <div id="result" class="result" style="display: none;"></div>
+    <div id="error" class="error" style="display: none;"></div>
+</div>
+
+<script>
+    let createdRule = '';
+
+    // Function to create the rule
+    function createRule() {
+        const ruleInput = document.getElementById('rule').value;
+        fetch('http://localhost:8080/api/rules/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain'
+            },
+            body: ruleInput
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error creating rule');
+            }
+            return response.json();
+        })
+        .then(data => {
+            createdRule = ruleInput;  // Save the rule to be used later in evaluation
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            alert('Rule created successfully!');
+        })
+        .catch(error => {
+            document.getElementById('error').innerHTML = 'Error creating rule!';
+            document.getElementById('error').style.display = 'block';
+        });
+    }
+
+    // Function to evaluate the rule
+    function evaluateRule() {
+        const age = document.getElementById('age').value;
+        const department = document.getElementById('department').value;
+        const salary = document.getElementById('salary').value;
+        const experience = document.getElementById('experience').value;
+
+        const requestData = {
+            age: parseInt(age),
+            department: department,
+            salary: parseInt(salary),
+            experience: parseInt(experience)
+        };
+
+        fetch(`http://localhost:8080/api/rules/evaluate?rule=${encodeURIComponent(createdRule)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error evaluating rule');
+            }
+            return response.json();
+        })
+        .then(result => {
+            document.getElementById('result').innerHTML = `Evaluation Result: ${result}`;
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+        })
+        .catch(error => {
+            document.getElementById('error').innerHTML = 'Error evaluating rule!';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+        });
+    }
+</script>
+
+</body>
+</html>
